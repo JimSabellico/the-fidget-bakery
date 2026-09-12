@@ -17,8 +17,8 @@ function render(filter = 'All') {
   const visible = filter === 'All' ? catalog : catalog.filter(item => item.family === filter);
   grid.innerHTML = visible.map((item, index) => {
     const price = config.available[item.id];
-    const action = price ? `<button class="product-buy" data-buy="${item.id}" aria-label="Buy ${item.name}">Buy for $${(price / 100).toFixed(2)} <span>↗</span></button>` : `<a class="product-buy" href="#custom" data-inquire="${item.name}">Ask to order <span>↗</span></a>`;
-    return `<article class="product-card" style="--delay:${index * 35}ms"><div class="product-image"><img src="${item.image}" alt="${item.name}" loading="lazy"><span class="product-family">${item.family}</span></div><div class="product-body"><div class="product-meta">${item.type} • 3D printed</div><h3>${item.name}</h3><p>${item.description}</p><div class="product-actions">${action}<a href="${item.makerworld}" target="_blank" rel="noopener noreferrer" aria-label="See ${item.name} on MakerWorld">See design</a></div></div></article>`;
+    const action = price ? `<button class="product-buy" data-buy="${item.id}" aria-label="Buy ${item.name}">Buy for $${(price / 100).toFixed(2)} <span>↗</span></button>` : config.contactReady ? `<a class="product-buy" href="#custom" data-inquire="${item.name}">Ask to order <span>↗</span></a>` : `<a class="product-buy" href="${item.makerworld}" target="_blank" rel="noopener noreferrer">See this design <span>↗</span></a>`;
+    return `<article class="product-card" style="--delay:${index * 35}ms"><div class="product-image"><img src="${item.image}" alt="${item.name}" loading="lazy"><span class="product-family">${item.family}</span></div><div class="product-body"><div class="product-meta">${item.type} • 3D printed</div><h3>${item.name}</h3><p>${item.description}</p><div class="product-actions">${action}${price || config.contactReady ? `<a href="${item.makerworld}" target="_blank" rel="noopener noreferrer" aria-label="See ${item.name} on MakerWorld">See design</a>` : ''}</div></div></article>`;
   }).join('');
 }
 render();
@@ -28,7 +28,7 @@ fetch('/api/config').then(response => response.json()).then(value => {
   if (!config.contactReady) {
     document.querySelectorAll('form[data-kind]').forEach(form => {
       form.querySelectorAll('input, textarea, select, button').forEach(control => control.disabled = true);
-      form.querySelector('.form-status').innerHTML = 'Our direct form is being connected. <a href="https://ko-fi.com/thefidgetbakery" target="_blank" rel="noopener noreferrer">Message us on Ko-fi ↗</a>';
+      form.querySelector('.form-status').innerHTML = 'Our direct form is being connected. Find us on <a href="https://makerworld.com/en/@TheFidgetBakery" target="_blank" rel="noopener noreferrer">MakerWorld ↗</a> or <a href="https://ko-fi.com/thefidgetbakery" target="_blank" rel="noopener noreferrer">Ko-fi ↗</a>.';
     });
   }
 }).catch(() => showToast('Some shop features are temporarily unavailable.'));
