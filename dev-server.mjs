@@ -7,7 +7,7 @@ import contact from './api/contact.js';
 import config from './api/config.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.webp': 'image/webp' };
+const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg' };
 const server = http.createServer(async (req, res) => {
   if (req.url === '/api/contact' || req.url === '/api/checkout' || req.url === '/api/config') {
     let raw = '';
@@ -18,7 +18,8 @@ const server = http.createServer(async (req, res) => {
     return (req.url === '/api/contact' ? contact : req.url === '/api/config' ? config : checkout)(req, res);
   }
   const safe = path.normalize(decodeURIComponent((req.url || '/').split('?')[0])).replace(/^\.\.([/\\]|$)/, '');
-  const file = path.join(root, safe === '/' ? 'index.html' : safe);
+  const pageRoute = /^\/(fidgets|wiggles)(\/[^/]+)?$/.test(safe) || /^\/(teachers|custom|contact)$/.test(safe);
+  const file = path.join(root, safe === '/' || pageRoute ? 'index.html' : safe);
   if (!file.startsWith(root) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); return res.end('Not found'); }
   res.setHeader('Content-Type', types[path.extname(file)] || 'application/octet-stream');
   fs.createReadStream(file).pipe(res);

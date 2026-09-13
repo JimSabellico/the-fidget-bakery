@@ -1,24 +1,10 @@
 import { catalog } from '../catalog.js';
 
-const prices = {
-  'chocolate-chip-cookie': process.env.PRICE_CHOCOLATE_CHIP_COOKIE,
-  'black-white-cookie': process.env.PRICE_BLACK_WHITE_COOKIE,
-  'peanut-butter-cookie': process.env.PRICE_PEANUT_BUTTER_COOKIE,
-  'chocolate-cupcake': process.env.PRICE_CHOCOLATE_CUPCAKE,
-  'fortune-cookie': process.env.PRICE_FORTUNE_COOKIE,
-  'lo-mein': process.env.PRICE_LO_MEIN,
-  'california-roll': process.env.PRICE_CALIFORNIA_ROLL,
-  'salmon-nigiri': process.env.PRICE_SALMON_NIGIRI,
-  'soy-sauce': process.env.PRICE_SOY_SAUCE,
-  'egg-roll': process.env.PRICE_EGG_ROLL,
-  'dumpling': process.env.PRICE_DUMPLING
-};
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed.' });
   const id = String(req.body?.id || '');
   const product = catalog.find(item => item.id === id);
-  const price = Number(prices[id]);
+  const price = product?.priceCents;
   const shipping = Number(process.env.SHIPPING_CENTS);
   if (!product) return res.status(400).json({ error: 'Please choose a valid item.' });
   if (!process.env.STRIPE_SECRET_KEY || !Number.isInteger(price) || price < 50 || !Number.isInteger(shipping) || shipping < 0) {
@@ -37,7 +23,7 @@ export default async function handler(req, res) {
     'shipping_options[0][shipping_rate_data][fixed_amount][currency]': 'usd',
     'shipping_options[0][shipping_rate_data][display_name]': 'US shipping',
     success_url: `${origin}/?ordered=1`,
-    cancel_url: `${origin}/#shop`,
+    cancel_url: `${origin}/${product.category}/${product.id}`,
     'metadata[product_id]': id
   });
   try {

@@ -1,6 +1,6 @@
 # The Fidget Bakery
 
-Static Vercel site with real MakerWorld catalog images, Stripe Checkout for physical orders, and Resend email delivery for custom-order/contact forms.
+Static Vercel site with custom product visualizations, Stripe Checkout for physical orders, and Resend email delivery for teacher-discount, custom-order, and contact forms.
 
 ## Local preview
 
@@ -8,7 +8,7 @@ Static Vercel site with real MakerWorld catalog images, Stripe Checkout for phys
 
 ## Launch configuration
 
-Add the values shown in `.env.example` to the Vercel project. Each product price is in cents. A product can go to Checkout only when its price, `STRIPE_SECRET_KEY`, and `SHIPPING_CENTS` are configured. Checkout collects a US shipping address and sends the buyer to Stripe's hosted payment page. Shipping is a flat rate configured in cents.
+Add the values shown in `.env.example` to the Vercel project. Fidgets are $8 and Wiggles are $5, set in `catalog.js`. A product can go to Checkout when `STRIPE_SECRET_KEY` and `SHIPPING_CENTS` are configured. Checkout collects a US shipping address and sends the buyer to Stripe's hosted payment page. Shipping is a flat rate configured in cents.
 
 For form delivery, use a verified Resend sending domain and set `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, and `CONTACT_FROM_EMAIL` in Vercel. The contact endpoint accepts only validated input and sends an email with the visitor's address as the reply-to. Do not place these secrets in the repo.
 

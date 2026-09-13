@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#fff7e8">
-  <meta name="description" content="The Fidget Bakery makes playful food-themed 3D printed fidgets, custom creations, and a monthly reseller license.">
-  <title>The Fidget Bakery | A little joy, freshly made</title>
+  <meta name="theme-color" content="#fff8ec">
+  <meta name="description" content="Playful food-inspired 3D printed fidgets and Little Wiggles from The Fidget Bakery. Shop the collections or ask about a custom order.">
+  <title>The Fidget Bakery | Freshly made fun</title>
   <link rel="icon" href="/assets/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,51 +14,23 @@
   <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <div class="sprinkle-bar">🍪 Handmade happiness, fresh from our family to yours 🍪</div>
+  <div class="top-strip"><span>✦</span> SMALL BATCH FUN • BIG TIME SMILES <span>✦</span></div>
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="The Fidget Bakery, home"><img src="/assets/logo.png" alt="The Fidget Bakery logo"></a>
-    <nav aria-label="Main navigation"><a href="#shop">The goodies</a><a href="#custom">Custom orders</a><a href="#license">For makers</a><a href="#hello">Say hello</a></nav>
-    <a class="header-cta" href="#shop">Explore the bakery <span>↗</span></a>
+    <a class="brand" href="/" aria-label="The Fidget Bakery home"><img src="/assets/logo.png" alt="The Fidget Bakery"></a>
+    <nav class="primary-nav" aria-label="Main navigation">
+      <a href="/fidgets" data-nav="fidgets">Fidgets</a>
+      <a href="/wiggles" data-nav="wiggles">Wiggles</a>
+      <a href="/teachers" data-nav="teachers">For teachers</a>
+      <a href="/custom" data-nav="custom">Custom orders</a>
+    </nav>
+    <a class="header-cta" href="/contact">Say hello <span>↗</span></a>
     <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
   </header>
-  <main id="top">
-    <section class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">THE SWEETEST WAY TO KEEP YOUR HANDS BUSY ✦</span>
-        <h1>A little joy,<br><em>freshly made.</em></h1>
-        <p>Food-inspired fidgets, tiny wiggly friends, and made-for-you creations. Designed to make you smile, one playful print at a time.</p>
-        <div class="hero-actions"><a class="button button-pink" href="#shop">Meet the goodies <span>↗</span></a><a class="button button-outline" href="#custom">Dream up a custom order</a></div>
-        <div class="hero-note"><span class="cookie-icon">✦</span> Family-made & full of personality</div>
-      </div>
-      <div class="hero-art" aria-label="Featured bakery fidget designs">
-        <div class="hero-blob"></div>
-        <div class="floating-word word-one">SPIN!</div><div class="floating-word word-two">WIGGLE!</div>
-        <img class="hero-cookie" src="/assets/chocolate-chip-cookie.webp" alt="Chocolate chip cookie fidget spinner">
-        <img class="hero-dumpling" src="/assets/dumpling.webp" alt="Cute dumpling wiggle toy">
-        <span class="sparkle sparkle-one">✳</span><span class="sparkle sparkle-two">✦</span><span class="sparkle sparkle-three">✴</span>
-      </div>
-    </section>
-    <div class="ticker" aria-hidden="true"><div>SMALL BATCH FUN ✦ BIG TIME SMILES ✦ FOOD YOU CAN FIDGET WITH ✦ SMALL BATCH FUN ✦ BIG TIME SMILES ✦ FOOD YOU CAN FIDGET WITH ✦</div></div>
-    <section class="intro section-pad" id="about">
-      <div class="intro-stamp">100%<br><small>FUN</small></div>
-      <div><span class="eyebrow">WELCOME TO THE BAKERY</span><h2>Looks like a treat.<br><em>Feels like a smile.</em></h2></div>
-      <p>We turn everyday snacks into cheerful 3D printed fidgets. Browse our cookie counter and our collection of tiny “Little Wiggles,” or tell us what you wish existed. We love making custom ideas real.</p>
-    </section>
-    <section class="shop section-pad" id="shop">
-      <div class="section-heading"><div><span class="eyebrow">PICK YOUR HAPPY</span><h2>Fresh from the <em>bakery</em></h2></div><p>Peek at our designs. Every item is a playful 3D printed creation—made for hands, desks, and big smiles.</p></div>
-      <div class="filters" role="group" aria-label="Filter products"><button class="active" data-filter="All">All goodies</button><button data-filter="Cookie Counter">Cookie counter</button><button data-filter="Sweet Treats">Sweet treats</button><button data-filter="Little Wiggles">Little Wiggles</button></div>
-      <div class="product-grid" id="product-grid"></div>
-      <p class="shop-note">Want a color, size, or style you don't see? <a href="#custom">Ask about a custom order →</a></p>
-    </section>
-    <section class="custom section-pad" id="custom">
-      <div class="custom-decor custom-decor-one">✳</div><div class="custom-decor custom-decor-two">✦</div>
-      <div class="custom-copy"><span class="eyebrow">YOUR IDEA, OUR OVEN</span><h2>Got a wild idea?<br><em>Let's make it.</em></h2><p>Party favors, personalized fidgets, a one-of-a-kind gift, or something totally outside the bakery menu—tell us what you're imagining. We'll get back to you with the next steps.</p><div class="custom-tags"><span>✦ Custom fidgets</span><span>✦ Gifts & favors</span><span>✦ Your big idea</span></div></div>
-      <form class="form-card" data-kind="custom"><h3>Tell us your idea <span>↗</span></h3><label>Your name<input name="name" autocomplete="name" required placeholder="What should we call you?"></label><label>Email address<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><label>What are you dreaming up?<select name="details"><option value="">Pick a starting point</option><option>Custom fidget</option><option>Party favors or bulk order</option><option>Personalized gift</option><option>Something else</option></select></label><label>Tell us more<textarea name="message" rows="4" required placeholder="Colors, quantity, timing, inspiration... anything helps!"></textarea></label><input class="honey" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><button class="button button-pink" type="submit">Send my idea <span>↗</span></button><p class="form-status" role="status"></p></form>
-    </section>
-    <section class="license section-pad" id="license"><div class="license-art"><span class="license-spark">✳</span><div class="license-badge"><span>FOR FELLOW MAKERS</span><strong>$10<small>/mo</small></strong><span>RESELLER LICENSE</span></div></div><div class="license-copy"><span class="eyebrow">LOVE TO PRINT? LET'S TEAM UP.</span><h2>Make it.<br><em>Sell it. Smile.</em></h2><p>Our $10/month Ko-fi Reseller License lets active members sell finished physical 3D prints of approved Fidget Bakery designs at their own locations.</p><ul><li>Sell approved finished physical prints while active</li><li>Keep the digital files with you—no sharing or reselling files</li><li>Don't claim the designs as your own</li></ul><a class="button button-brown" href="https://ko-fi.com/thefidgetbakery/tiers" target="_blank" rel="noopener noreferrer">See the reseller license <span>↗</span></a><p class="fine-print">Full license terms and membership checkout are on Ko-fi.</p></div></section>
-    <section class="hello section-pad" id="hello"><div><span class="eyebrow">DROP US A NOTE</span><h2>Let's talk <em>fidgets.</em></h2><p>Questions about an item, an upcoming fair, or just want to say hi? Our inbox is open.</p><div class="social-links"><a href="https://makerworld.com/en/@TheFidgetBakery" target="_blank" rel="noopener noreferrer">Find us on MakerWorld ↗</a><a href="https://ko-fi.com/thefidgetbakery/tiers" target="_blank" rel="noopener noreferrer">Visit our Ko-fi ↗</a></div></div><form class="form-card" data-kind="message"><h3>Say hello <span>☺</span></h3><label>Your name<input name="name" autocomplete="name" required placeholder="Your name"></label><label>Email address<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><label>Message<textarea name="message" rows="4" required placeholder="What's on your mind?"></textarea></label><input class="honey" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><button class="button button-pink" type="submit">Send message <span>↗</span></button><p class="form-status" role="status"></p></form></section>
-  </main>
-  <footer><div class="footer-main"><div><img src="/assets/logo.png" alt="The Fidget Bakery"><p>Fresh ideas. Busy hands. Happy hearts.</p></div><div><strong>Explore</strong><a href="#shop">The goodies</a><a href="#custom">Custom orders</a><a href="#license">Reseller license</a></div><div><strong>Find us</strong><a href="https://makerworld.com/en/@TheFidgetBakery">MakerWorld</a><a href="https://ko-fi.com/thefidgetbakery/tiers">Ko-fi</a><a href="#hello">Contact</a></div></div><div class="footer-bottom"><span>© <span id="year"></span> The Fidget Bakery. Made with a lot of heart.</span><span>3D printed toys, not edible treats. Small parts may be present.</span></div></footer>
+  <main id="page"></main>
+  <footer class="site-footer">
+    <div class="footer-top"><div class="footer-brand"><img src="/assets/logo.png" alt="The Fidget Bakery"><p>Food-inspired fidgets, freshly made for fun.</p></div><div class="footer-links"><strong>Explore</strong><a href="/fidgets">Fidgets</a><a href="/wiggles">Wiggles</a><a href="/teachers">Teacher discounts</a></div><div class="footer-links"><strong>Connect</strong><a href="/custom">Custom orders</a><a href="/contact">Contact us</a><a href="https://makerworld.com/en/@TheFidgetBakery" target="_blank" rel="noopener noreferrer">MakerWorld ↗</a><a href="https://ko-fi.com/thefidgetbakery/tiers" target="_blank" rel="noopener noreferrer">Reseller license ↗</a></div></div>
+    <div class="footer-bottom"><span>© <span id="year"></span> The Fidget Bakery</span><span>3D printed toys, not edible treats. Small parts may be present.</span></div>
+  </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
