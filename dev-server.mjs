@@ -7,7 +7,7 @@ import contact from './api/contact.js';
 import config from './api/config.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg' };
+const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' };
 const server = http.createServer(async (req, res) => {
   if (req.url === '/api/contact' || req.url === '/api/checkout' || req.url === '/api/config') {
     let raw = '';
