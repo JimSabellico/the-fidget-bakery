@@ -18,7 +18,7 @@ const server = http.createServer(async (req, res) => {
     return (req.url === '/api/contact' ? contact : req.url === '/api/config' ? config : checkout)(req, res);
   }
   const safe = path.normalize(decodeURIComponent((req.url || '/').split('?')[0])).replace(/^\.\.([/\\]|$)/, '');
-  const pageRoute = /^\/(fidgets|wiggles)(\/[^/]+)?$/.test(safe) || /^\/(teachers|custom|contact|cart)$/.test(safe);
+  const pageRoute = /^\/(fidgets|wiggles)(\/[^/]+)?$/.test(safe) || /^\/(teachers|teacher-packs|custom|contact|cart)$/.test(safe);
   const file = path.join(root, safe === '/' || pageRoute ? 'index.html' : safe);
   if (!file.startsWith(root) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); return res.end('Not found'); }
   res.setHeader('Content-Type', types[path.extname(file)] || 'application/octet-stream');

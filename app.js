@@ -1,4 +1,5 @@
 import { catalog, collections, shippingCents, freeShippingOverCents } from './catalog.js';
+import { teacherPackSize, teacherPackPriceCents, packFidgets, normalizeTeacherPack, teacherPackDescription } from './teacher-pack.js';
 
 const page = document.querySelector('#page');
 const toast = document.querySelector('#toast');
@@ -6,11 +7,15 @@ const path = location.pathname.replace(/\/+$/, '') || '/';
 const segments = path.split('/').filter(Boolean);
 let config = { checkoutReady: false, contactReady: false };
 let cart = [];
+let packMode = 'single';
+let packSingleId = packFidgets[0].id;
+let packCounts = Object.fromEntries(packFidgets.map(item => [item.id, 0]));
 try {
   const stored = JSON.parse(localStorage.getItem('fidget-bakery-bag') || '[]');
   if (Array.isArray(stored)) {
     const seen = new Set();
     cart = stored.filter(entry => {
+      if (entry?.kind === 'teacher-pack') return /^[a-f0-9-]{36}$/.test(entry.key) && Boolean(normalizeTeacherPack(entry.pack));
       if (!catalog.some(item => item.id === entry.id) || !Number.isInteger(entry.quantity) || entry.quantity < 1 || entry.quantity > 20 || seen.has(entry.id)) return false;
       seen.add(entry.id);
       return true;
@@ -22,18 +27,26 @@ const money = cents => `$${(cents / 100).toFixed(0)}`;
 const productUrl = item => `/${item.category}/${item.id}`;
 const image = (item, className = '') => `<img class="${className}" src="${item.image}" alt="Illustration of ${item.name}" loading="lazy">`;
 const sparkle = (className = '') => `<span class="sparkle ${className}" aria-hidden="true">✳</span>`;
-const subtotal = () => cart.reduce((sum, entry) => sum + catalog.find(item => item.id === entry.id).priceCents * entry.quantity, 0);
+const subtotal = () => cart.reduce((sum, entry) => sum + (entry.kind === 'teacher-pack' ? teacherPackPriceCents : catalog.find(item => item.id === entry.id).priceCents * entry.quantity), 0);
 function saveCart() {
   try { localStorage.setItem('fidget-bakery-bag', JSON.stringify(cart)); } catch { /* Storage can be unavailable in private browsing. */ }
-  document.querySelector('#bag-count').textContent = cart.reduce((sum, entry) => sum + entry.quantity, 0);
+  document.querySelector('#bag-count').textContent = cart.reduce((sum, entry) => sum + (entry.kind === 'teacher-pack' ? 1 : entry.quantity), 0);
   if (path === '/cart') render();
 }
 function addToCart(id) {
-  const entry = cart.find(item => item.id === id);
+  const entry = cart.find(item => item.kind !== 'teacher-pack' && item.id === id);
   if (entry) { if (entry.quantity >= 20) return showToast('The bag limit is 20 of each item.'); entry.quantity++; }
-  else cart.push({ id, quantity: 1 });
+  else { if (cart.length >= 20) return showToast('Your bag is full. Please check out before adding more.'); cart.push({ id, quantity: 1 }); }
   saveCart();
   showToast('Added to your bag! 🍪');
+}
+function addTeacherPack() {
+  const pack = normalizeTeacherPack(packMode === 'random' ? { mode: 'random' } : packMode === 'single' ? { mode: 'single', selection: [{ id: packSingleId, quantity: teacherPackSize }] } : { mode: 'custom', selection: packFidgets.map(item => ({ id: item.id, quantity: packCounts[item.id] })).filter(choice => choice.quantity > 0) });
+  if (!pack) return showToast('Choose exactly 10 fidgets for your pack.');
+  if (cart.length >= 20) return showToast('Your bag is full. Please check out before adding more.');
+  cart.push({ kind: 'teacher-pack', key: crypto.randomUUID(), pack });
+  saveCart();
+  showToast('Teacher pack added to your bag! ✎');
 }
 
 function showToast(message) {
@@ -62,7 +75,7 @@ function home() {
     <a class="choice choice-fidgets" href="/fidgets"><div class="choice-copy"><span class="choice-number">01 / SPIN + SLIDE</span><h3>Fidgets</h3><p>Cookie spinners, sliders, and little moments of joy.</p><span class="choice-action">Explore fidgets <b>↗</b></span></div>${image(catalog[2])}${sparkle('choice-spark')}</a>
     <a class="choice choice-wiggles" href="/wiggles"><div class="choice-copy"><span class="choice-number">02 / CUTE + HAPPY</span><h3>Wiggles</h3><p>Meet the tiny food friends with big personalities.</p><span class="choice-action">Meet the Wiggles <b>↗</b></span></div>${image(dumpling)}${sparkle('choice-spark')}</a>
   </div></section>
-  <section class="home-bottom page-wrap"><span class="home-bottom-icon" aria-hidden="true">✎</span><div><span class="eyebrow">HEY, TEACHERS!</span><h2>A little joy for <em>the classroom.</em></h2><p>Planning a classroom order? Ask us about special teacher pricing.</p></div><a class="button button-brown" href="/teachers">Teacher discounts <span>↗</span></a></section>`;
+  <section class="home-bottom page-wrap"><span class="home-bottom-icon" aria-hidden="true">✎</span><div><span class="eyebrow">HEY, TEACHERS!</span><h2>A little joy for <em>the classroom.</em></h2><p>Get 10 fidgets for $60 and build the mix your way.</p></div><a class="button button-brown" href="/teacher-packs">Teacher packs <span>↗</span></a></section>`;
 }
 
 function collection(category) {
@@ -90,23 +103,33 @@ function cartPage() {
   const shipping = total > freeShippingOverCents ? 0 : shippingCents;
   const toGo = Math.max(1, Math.ceil((freeShippingOverCents + 1 - total) / 100));
   const rows = cart.map(entry => {
+    if (entry.kind === 'teacher-pack') {
+      return `<div class="cart-item cart-pack"><a href="/teacher-packs">${image(packFidgets[0])}<span class="cart-pack-sticker">10</span></a><div><span class="mini-label">CLASSROOM PACK</span><h3><a href="/teacher-packs">Teacher Fidget Pack</a></h3><p>${teacherPackDescription(entry.pack)}</p><button class="remove-pack" data-remove-pack="${entry.key}">Remove pack</button></div><strong>${money(teacherPackPriceCents)}</strong></div>`;
+    }
     const item = catalog.find(product => product.id === entry.id);
     return `<div class="cart-item"><a href="${productUrl(item)}">${image(item)}</a><div><span class="mini-label">${item.category === 'fidgets' ? 'Fidget' : 'Wiggle'}</span><h3><a href="${productUrl(item)}">${item.name}</a></h3><span>${money(item.priceCents)} each</span><div class="quantity"><button type="button" data-change="${item.id}" data-delta="-1" aria-label="Remove one ${item.name}">−</button><span>${entry.quantity}</span><button type="button" data-change="${item.id}" data-delta="1" aria-label="Add one ${item.name}">+</button></div></div><strong>${money(item.priceCents * entry.quantity)}</strong></div>`;
   }).join('');
-  const suggestions = catalog.filter(item => !cart.some(entry => entry.id === item.id)).sort((a, b) => a.priceCents - b.priceCents).slice(0, 3);
+  const suggestions = catalog.filter(item => !cart.some(entry => entry.kind !== 'teacher-pack' && entry.id === item.id)).sort((a, b) => a.priceCents - b.priceCents).slice(0, 3);
   const bump = suggestions[0];
   return `<section class="cart-page page-wrap"><div class="breadcrumbs">${crumb('Home','/')}<span>Your bag</span></div><span class="eyebrow">YOUR LITTLE HAUL ✦</span><h1>Your bag <em>of fun.</em></h1>${cart.length ? `<div class="cart-layout"><div class="cart-items">${rows}</div><aside class="cart-summary"><h2>Order summary</h2><div class="shipping-nudge"><strong>${shipping ? `You're $${toGo} away from free shipping!` : 'You unlocked free shipping! 🎉'}</strong><div class="shipping-track"><span style="width:${Math.min(100, total / (freeShippingOverCents + 1) * 100)}%"></span></div><small>${shipping ? 'U.S. shipping is $5; orders over $25 ship free.' : 'Your U.S. shipping is on us.'}</small>${shipping && bump ? `<button class="bump-button" data-add="${bump.id}">Add a ${bump.name} for ${money(bump.priceCents)} ↗</button>` : ''}</div><div class="total-line"><span>Items</span><b>${money(total)}</b></div><div class="total-line"><span>US shipping</span><b>${shipping ? money(shipping) : 'FREE'}</b></div><div class="total-line grand-total"><span>Total</span><b>${money(total + shipping)}</b></div>${config.checkoutReady ? '<button class="button button-pink cart-checkout" data-checkout>Continue to checkout <span>↗</span></button>' : '<div class="setup-note"><strong>Checkout is being connected.</strong><span>Your bag is saved on this device for when ordering opens.</span></div>'}<p class="cart-fine">Secure payment through Stripe. U.S. shipping only.</p></aside></div>${shipping && suggestions.length ? `<div class="cart-extras"><span class="eyebrow">A LITTLE SOMETHING EXTRA?</span><h2>Add a treat to get closer to <em>free shipping.</em></h2><div class="products-grid">${suggestions.map(productCard).join('')}</div></div>` : ''}` : `<div class="empty-bag"><span>🍪</span><h2>Nothing in the bag yet.</h2><p>There’s lots of fun waiting on the bakery shelves.</p><a class="button button-pink" href="/fidgets">Explore fidgets <span>↗</span></a><a class="button button-cream" href="/wiggles">Meet the Wiggles <span>↗</span></a></div>`}</section>`;
 }
 
 function form(kind) {
-  const teacher = kind === 'teacher', custom = kind === 'custom';
-  const heading = teacher ? 'Tell us about your classroom' : custom ? 'Tell us your idea' : 'Drop us a note';
-  const field = teacher ? `<label>School or organization<input name="school" placeholder="Your school or program" autocomplete="organization" required></label><label>What would you like for your classroom?<textarea name="message" rows="4" placeholder="Which fidgets or Wiggles, how many, and when do you need them?" required></textarea></label>` : custom ? `<label>What are you dreaming up?<select name="details"><option value="">Choose a starting point</option><option>Custom fidget</option><option>Party favors or bulk order</option><option>Personalized gift</option><option>Something else</option></select></label><label>Tell us more<textarea name="message" rows="4" placeholder="Colors, quantity, timing, inspiration..." required></textarea></label>` : `<label>Your message<textarea name="message" rows="4" placeholder="What's on your mind?" required></textarea></label>`;
-  return `<form class="form-card" data-kind="${kind}"><h2>${heading} <span>✳</span></h2><div class="form-row"><label>Your name<input name="name" placeholder="Your name" autocomplete="name" required></label><label>Email address<input name="email" type="email" placeholder="you@example.com" autocomplete="email" required></label></div>${field}<input class="honey" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><button class="button button-pink" type="submit">${teacher ? 'Ask for teacher pricing' : custom ? 'Send my idea' : 'Send message'} <span>↗</span></button><p class="form-status" role="status"></p></form>`;
+  const custom = kind === 'custom';
+  const heading = custom ? 'Tell us your idea' : 'Drop us a note';
+  const field = custom ? `<label>What are you dreaming up?<select name="details"><option value="">Choose a starting point</option><option>Custom fidget</option><option>Party favors or bulk order</option><option>Personalized gift</option><option>Something else</option></select></label><label>Tell us more<textarea name="message" rows="4" placeholder="Colors, quantity, timing, inspiration..." required></textarea></label>` : `<label>Your message<textarea name="message" rows="4" placeholder="What's on your mind?" required></textarea></label>`;
+  return `<form class="form-card" data-kind="${kind}"><h2>${heading} <span>✳</span></h2><div class="form-row"><label>Your name<input name="name" placeholder="Your name" autocomplete="name" required></label><label>Email address<input name="email" type="email" placeholder="you@example.com" autocomplete="email" required></label></div>${field}<input class="honey" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><button class="button button-pink" type="submit">${custom ? 'Send my idea' : 'Send message'} <span>↗</span></button><p class="form-status" role="status"></p></form>`;
 }
 
 function teachers() {
-  return `<section class="info-hero teachers-hero"><div class="page-wrap info-hero-inner"><div><div class="breadcrumbs">${crumb('Home','/')}<span>For teachers</span></div><span class="eyebrow">A LITTLE EXTRA FOR EDUCATORS ✦</span><h1>Classroom joy,<br><em>made easier.</em></h1><p>Want fidgets or Wiggles for your students? Tell us about your classroom order and we’ll follow up with a teacher coupon code for special pricing.</p><a class="button button-pink" href="#teacher-form">Ask for a code <span>↗</span></a></div><div class="info-illustration teacher-illustration"><span class="paper-note">A+<small>FOR FUN</small></span><img src="/assets/dumpling-studio.jpg" alt="Dumpling Wiggle visualization"><span class="teacher-pencil" aria-hidden="true">✎</span></div></div></section><section class="teachers-main page-wrap"><div class="teacher-steps"><span class="eyebrow">HOW IT WORKS</span><h2>Simple as <em>1, 2, 3.</em></h2><ol><li><b>01</b><span>Tell us what you’re hoping to order.</span></li><li><b>02</b><span>We’ll reply with classroom pricing and a coupon code.</span></li><li><b>03</b><span>Choose the toys that fit your students best.</span></li></ol><p>Regular prices: fidgets $8 each and Wiggles $5 each. Teacher pricing is quoted after we hear about your classroom needs.</p></div><div id="teacher-form">${form('teacher')}</div></section>`;
+  const selected = packCounts ? Object.values(packCounts).reduce((sum, count) => sum + count, 0) : 0;
+  const active = packMode === 'single' ? packFidgets.find(item => item.id === packSingleId) : null;
+  const choice = packMode === 'single'
+    ? `<div class="pack-single-choice">${image(active)}<label>Which fidget would you like ten of?<select data-pack-single>${packFidgets.map(item => `<option value="${item.id}" ${item.id === packSingleId ? 'selected' : ''}>${item.name}</option>`).join('')}</select></label></div>`
+    : packMode === 'random'
+      ? `<div class="pack-random-choice"><div class="pack-random-art">${packFidgets.map(item => image(item)).join('')}</div><div><h3>We’ll pick a fun assortment.</h3><p>Your pack will contain ten fidgets chosen from the designs shown here. Because there are four designs, repeats will be included.</p></div></div>`
+      : `<div class="pack-mix-choice"><div class="pack-progress"><strong>${selected} of ${teacherPackSize} chosen</strong><span>${selected === teacherPackSize ? 'Your pack is ready!' : `${teacherPackSize - selected} to go`}</span></div><div class="shipping-track"><span style="width:${selected / teacherPackSize * 100}%"></span></div>${packFidgets.map(item => `<div class="pack-mix-row">${image(item)}<div><strong>${item.name}</strong><small>$8 individually</small></div><div class="quantity"><button type="button" data-pack-change="${item.id}" data-delta="-1" aria-label="Remove one ${item.name}" ${packCounts[item.id] === 0 ? 'disabled' : ''}>−</button><span>${packCounts[item.id]}</span><button type="button" data-pack-change="${item.id}" data-delta="1" aria-label="Add one ${item.name}" ${selected >= teacherPackSize ? 'disabled' : ''}>+</button></div></div>`).join('')}</div>`;
+  return `<section class="info-hero teachers-hero teacher-pack-hero"><div class="page-wrap info-hero-inner"><div><div class="breadcrumbs">${crumb('Home','/')}<span>Teacher packs</span></div><span class="eyebrow">A LITTLE EXTRA FOR CLASSROOMS ✦</span><h1>Ten fidgets.<br><em>One happy price.</em></h1><p>Build a pack of 10 food-inspired fidgets for $60. Pick a favorite, leave the mix to us, or choose each one yourself. No coupon or waiting needed.</p><a class="button button-pink" href="#pack-builder">Build your pack <span>↗</span></a></div><div class="info-illustration teacher-illustration"><span class="paper-note">10<small>FOR $60</small></span><img src="/assets/chocolate-chip-cookie-studio.jpg" alt="Chocolate Chip Cookie Spinner visualization"><span class="teacher-pencil" aria-hidden="true">✎</span></div></div></section><section class="pack-builder page-wrap" id="pack-builder"><div class="pack-heading"><span class="eyebrow">MAKE IT YOURS ✦</span><h2>Build your <em>teacher pack.</em></h2><p>Ten fidgets are normally $80. With the pack, you save $20 and U.S. shipping is free.</p></div><div class="pack-layout"><div><div class="pack-modes" role="group" aria-label="Choose how to build your teacher pack"><button type="button" class="pack-mode ${packMode === 'single' ? 'selected' : ''}" data-pack-mode="single" aria-pressed="${packMode === 'single'}"><span>01</span><strong>Ten of one</strong><small>One favorite, ten times.</small></button><button type="button" class="pack-mode ${packMode === 'random' ? 'selected' : ''}" data-pack-mode="random" aria-pressed="${packMode === 'random'}"><span>02</span><strong>Surprise mix</strong><small>Let us pick the fun.</small></button><button type="button" class="pack-mode ${packMode === 'custom' ? 'selected' : ''}" data-pack-mode="custom" aria-pressed="${packMode === 'custom'}"><span>03</span><strong>Mix your own</strong><small>Choose each of the ten.</small></button></div><div class="pack-choice">${choice}</div></div><aside class="pack-summary"><span class="eyebrow">YOUR CLASSROOM DEAL</span><h3>Teacher Fidget Pack</h3><div class="pack-price">$60 <span>for 10 fidgets</span></div><div class="pack-savings">Save $20 ✦ Free U.S. shipping</div><p>${packMode === 'single' ? teacherPackDescription({ mode: 'single', selection: [{ id: packSingleId, quantity: teacherPackSize }] }) : packMode === 'random' ? 'A surprise assortment of ten fidgets, with repeats.' : `${selected} of 10 fidgets selected.`}</p><button type="button" class="button button-pink" data-add-pack ${packMode === 'custom' && selected !== teacherPackSize ? 'disabled' : ''}>Add teacher pack to bag <span>↗</span></button><a class="quiet-link" href="/cart">View your bag ↗</a>${config.checkoutReady ? '' : '<div class="setup-note"><strong>Online checkout is being connected.</strong><span>You can build your pack now; payment will open soon.</span></div>'}</aside></div></section>`;
 }
 
 function customPage() {
@@ -127,7 +150,7 @@ function render() {
     const item = catalog.find(candidate => candidate.category === segments[0] && candidate.id === segments[1]);
     page.innerHTML = item ? product(item) : notFound();
     if (item) title = `${item.name} | The Fidget Bakery`;
-  } else if (path === '/teachers') { page.innerHTML = teachers(); title = 'Teacher Discounts | The Fidget Bakery'; }
+  } else if (path === '/teachers' || path === '/teacher-packs') { page.innerHTML = teachers(); title = 'Teacher Fidget Packs | The Fidget Bakery'; }
   else if (path === '/cart') { page.innerHTML = cartPage(); title = 'Your Bag | The Fidget Bakery'; }
   else if (path === '/custom') { page.innerHTML = customPage(); title = 'Custom Orders | The Fidget Bakery'; }
   else if (path === '/contact') { page.innerHTML = contactPage(); title = 'Contact | The Fidget Bakery'; }
@@ -173,7 +196,24 @@ document.querySelector('.menu-toggle').addEventListener('click', event => {
   event.currentTarget.textContent = open ? '✕' : '☰';
 });
 
+document.addEventListener('change', event => {
+  if (event.target.matches('[data-pack-single]')) { packSingleId = event.target.value; render(); }
+});
+
 document.addEventListener('click', async event => {
+  const mode = event.target.closest('[data-pack-mode]');
+  if (mode) { packMode = mode.dataset.packMode; render(); return; }
+  const packChange = event.target.closest('[data-pack-change]');
+  if (packChange) {
+    const id = packChange.dataset.packChange;
+    const next = packCounts[id] + Number(packChange.dataset.delta);
+    const selected = Object.values(packCounts).reduce((sum, count) => sum + count, 0);
+    if (next >= 0 && next <= teacherPackSize && selected + Number(packChange.dataset.delta) <= teacherPackSize) { packCounts[id] = next; render(); }
+    return;
+  }
+  if (event.target.closest('[data-add-pack]')) { addTeacherPack(); return; }
+  const removePack = event.target.closest('[data-remove-pack]');
+  if (removePack) { cart = cart.filter(entry => entry.key !== removePack.dataset.removePack); saveCart(); return; }
   const add = event.target.closest('[data-add]');
   if (add) { addToCart(add.dataset.add); return; }
   const change = event.target.closest('[data-change]');
