@@ -2,13 +2,13 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/fidgets", "destination": "/index.html" },
-    { "source": "/fidgets/:slug", "destination": "/index.html" },
-    { "source": "/wiggles", "destination": "/index.html" },
-    { "source": "/wiggles/:slug", "destination": "/index.html" },
-    { "source": "/teachers", "destination": "/index.html" },
-    { "source": "/custom", "destination": "/index.html" },
-    { "source": "/contact", "destination": "/index.html" }
+    { "source": "/fidgets", "destination": "/" },
+    { "source": "/fidgets/:slug", "destination": "/" },
+    { "source": "/wiggles", "destination": "/" },
+    { "source": "/wiggles/:slug", "destination": "/" },
+    { "source": "/teachers", "destination": "/" },
+    { "source": "/custom", "destination": "/" },
+    { "source": "/contact", "destination": "/" }
   ],
   "headers": [
     {
