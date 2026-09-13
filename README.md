@@ -8,7 +8,7 @@ Static Vercel site with custom product visualizations, Stripe Checkout for physi
 
 ## Launch configuration
 
-Add the values shown in `.env.example` to the Vercel project. Fidgets are $8 and Wiggles are $5, set in `catalog.js`. A product can go to Checkout when `STRIPE_SECRET_KEY` and `SHIPPING_CENTS` are configured. Checkout collects a US shipping address and sends the buyer to Stripe's hosted payment page. Shipping is a flat rate configured in cents.
+Add the values shown in `.env.example` to the Vercel project. Fidgets are $8 and Wiggles are $5, set in `catalog.js`. A cart can go to Checkout when `STRIPE_SECRET_KEY` is configured. Checkout collects a US shipping address and sends the buyer to Stripe's hosted payment page. U.S. shipping is $5, or free when the merchandise subtotal is over $25. Shipping and threshold are set in `catalog.js`.
 
 For form delivery, use a verified Resend sending domain and set `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, and `CONTACT_FROM_EMAIL` in Vercel. The contact endpoint accepts only validated input and sends an email with the visitor's address as the reply-to. Do not place these secrets in the repo.
 

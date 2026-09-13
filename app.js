@@ -1,15 +1,33 @@
-import { catalog, collections } from './catalog.js';
+import { catalog, collections, shippingCents, freeShippingOverCents } from './catalog.js';
 
 const page = document.querySelector('#page');
 const toast = document.querySelector('#toast');
 const path = location.pathname.replace(/\/+$/, '') || '/';
 const segments = path.split('/').filter(Boolean);
-let config = { available: {}, contactReady: false };
+let config = { checkoutReady: false, contactReady: false };
+let cart = [];
+try {
+  const stored = JSON.parse(localStorage.getItem('fidget-bakery-bag') || '[]');
+  if (Array.isArray(stored)) cart = stored.filter(entry => catalog.some(item => item.id === entry.id) && Number.isInteger(entry.quantity) && entry.quantity > 0 && entry.quantity <= 20);
+} catch { cart = []; }
 
 const money = cents => `$${(cents / 100).toFixed(0)}`;
 const productUrl = item => `/${item.category}/${item.id}`;
 const image = (item, className = '') => `<img class="${className}" src="${item.image}" alt="Illustration of ${item.name}" loading="lazy">`;
 const sparkle = (className = '') => `<span class="sparkle ${className}" aria-hidden="true">✳</span>`;
+const subtotal = () => cart.reduce((sum, entry) => sum + catalog.find(item => item.id === entry.id).priceCents * entry.quantity, 0);
+function saveCart() {
+  localStorage.setItem('fidget-bakery-bag', JSON.stringify(cart));
+  document.querySelector('#bag-count').textContent = cart.reduce((sum, entry) => sum + entry.quantity, 0);
+  if (path === '/cart') render();
+}
+function addToCart(id) {
+  const entry = cart.find(item => item.id === id);
+  if (entry) { if (entry.quantity >= 20) return showToast('The bag limit is 20 of each item.'); entry.quantity++; }
+  else cart.push({ id, quantity: 1 });
+  saveCart();
+  showToast('Added to your bag! 🍪');
+}
 
 function showToast(message) {
   toast.textContent = message;
@@ -51,13 +69,26 @@ function collection(category) {
 function product(item) {
   const category = collections[item.category];
   const related = catalog.filter(candidate => candidate.category === item.category && candidate.id !== item.id).slice(0, 3);
-  const enabled = Boolean(config.available[item.id]);
   return `<section class="product-page page-wrap"><div class="breadcrumbs">${crumb('Home','/')}${crumb(category.name,`/${item.category}`)}<span>${item.name}</span></div><div class="product-layout">
     <div class="product-main-image">${image(item)}<span class="image-spark image-spark-a" aria-hidden="true">✳</span><span class="image-spark image-spark-b" aria-hidden="true">✦</span></div>
     <div class="product-info"><span class="eyebrow">${item.category === 'fidgets' ? 'FRESH FROM THE FIDGET COUNTER' : 'A LITTLE WIGGLE FRIEND'}</span><h1>${item.name}</h1><div class="product-price">${money(item.priceCents)} <span>each</span></div><p class="product-lead">${item.detail}</p><div class="product-points"><div><span>✦</span> Family-made 3D printed fun</div><div><span>✦</span> Food-inspired, never edible</div><div><span>✦</span> A sweet little gift or desk companion</div></div>
-    ${enabled ? `<button class="button button-pink buy-button" data-buy="${item.id}">Buy now <span>↗</span></button>` : `<div class="setup-note"><strong>Online checkout is being set up.</strong><span>We’ll open orders here soon. You can still explore the design below.</span></div>`}
+    <button class="button button-pink buy-button" data-add="${item.id}">Add to bag <span>↗</span></button><a class="quiet-link" href="/cart">View your bag ↗</a>
+    ${config.checkoutReady ? '' : `<div class="setup-note"><strong>Online checkout is being connected.</strong><span>You can build a bag now; payment will open soon.</span></div>`}
     <a class="quiet-link" href="${item.makerworld}" target="_blank" rel="noopener noreferrer">See the original design on MakerWorld ↗</a><p class="image-note">Images are custom visualizations. Final 3D prints may vary slightly in color and finish.</p></div>
   </div></section><section class="related page-wrap"><div class="list-heading"><div><span class="eyebrow">KEEP EXPLORING</span><h2>More ${category.name.toLowerCase()} to <em>love.</em></h2></div><a href="/${item.category}">See all ${category.name} ↗</a></div><div class="products-grid">${related.map(productCard).join('')}</div></section>`;
+}
+
+function cartPage() {
+  const total = subtotal();
+  const shipping = total > freeShippingOverCents ? 0 : shippingCents;
+  const toGo = Math.max(1, Math.ceil((freeShippingOverCents + 1 - total) / 100));
+  const rows = cart.map(entry => {
+    const item = catalog.find(product => product.id === entry.id);
+    return `<div class="cart-item"><a href="${productUrl(item)}">${image(item)}</a><div><span class="mini-label">${item.category === 'fidgets' ? 'Fidget' : 'Wiggle'}</span><h3><a href="${productUrl(item)}">${item.name}</a></h3><span>${money(item.priceCents)} each</span><div class="quantity"><button type="button" data-change="${item.id}" data-delta="-1" aria-label="Remove one ${item.name}">−</button><span>${entry.quantity}</span><button type="button" data-change="${item.id}" data-delta="1" aria-label="Add one ${item.name}">+</button></div></div><strong>${money(item.priceCents * entry.quantity)}</strong></div>`;
+  }).join('');
+  const suggestions = catalog.filter(item => !cart.some(entry => entry.id === item.id)).sort((a, b) => a.priceCents - b.priceCents).slice(0, 3);
+  const bump = suggestions[0];
+  return `<section class="cart-page page-wrap"><div class="breadcrumbs">${crumb('Home','/')}<span>Your bag</span></div><span class="eyebrow">YOUR LITTLE HAUL ✦</span><h1>Your bag <em>of fun.</em></h1>${cart.length ? `<div class="cart-layout"><div class="cart-items">${rows}</div><aside class="cart-summary"><h2>Order summary</h2><div class="shipping-nudge"><strong>${shipping ? `You're $${toGo} away from free shipping!` : 'You unlocked free shipping! 🎉'}</strong><div class="shipping-track"><span style="width:${Math.min(100, total / (freeShippingOverCents + 1) * 100)}%"></span></div><small>${shipping ? 'U.S. shipping is $5; orders over $25 ship free.' : 'Your U.S. shipping is on us.'}</small>${shipping && bump ? `<button class="bump-button" data-add="${bump.id}">Add a ${bump.name} for ${money(bump.priceCents)} ↗</button>` : ''}</div><div class="total-line"><span>Items</span><b>${money(total)}</b></div><div class="total-line"><span>US shipping</span><b>${shipping ? money(shipping) : 'FREE'}</b></div><div class="total-line grand-total"><span>Total</span><b>${money(total + shipping)}</b></div>${config.checkoutReady ? '<button class="button button-pink cart-checkout" data-checkout>Continue to checkout <span>↗</span></button>' : '<div class="setup-note"><strong>Checkout is being connected.</strong><span>Your bag is saved on this device for when ordering opens.</span></div>'}<p class="cart-fine">Secure payment through Stripe. U.S. shipping only.</p></aside></div>${shipping && suggestions.length ? `<div class="cart-extras"><span class="eyebrow">A LITTLE SOMETHING EXTRA?</span><h2>Add a treat to get closer to <em>free shipping.</em></h2><div class="products-grid">${suggestions.map(productCard).join('')}</div></div>` : ''}` : `<div class="empty-bag"><span>🍪</span><h2>Nothing in the bag yet.</h2><p>There’s lots of fun waiting on the bakery shelves.</p><a class="button button-pink" href="/fidgets">Explore fidgets <span>↗</span></a><a class="button button-cream" href="/wiggles">Meet the Wiggles <span>↗</span></a></div>`}</section>`;
 }
 
 function form(kind) {
@@ -90,6 +121,7 @@ function render() {
     page.innerHTML = item ? product(item) : notFound();
     if (item) title = `${item.name} | The Fidget Bakery`;
   } else if (path === '/teachers') { page.innerHTML = teachers(); title = 'Teacher Discounts | The Fidget Bakery'; }
+  else if (path === '/cart') { page.innerHTML = cartPage(); title = 'Your Bag | The Fidget Bakery'; }
   else if (path === '/custom') { page.innerHTML = customPage(); title = 'Custom Orders | The Fidget Bakery'; }
   else if (path === '/contact') { page.innerHTML = contactPage(); title = 'Contact | The Fidget Bakery'; }
   else page.innerHTML = notFound();
@@ -135,18 +167,27 @@ document.querySelector('.menu-toggle').addEventListener('click', event => {
 });
 
 document.addEventListener('click', async event => {
-  const button = event.target.closest('[data-buy]');
+  const add = event.target.closest('[data-add]');
+  if (add) { addToCart(add.dataset.add); return; }
+  const change = event.target.closest('[data-change]');
+  if (change) {
+    const entry = cart.find(item => item.id === change.dataset.change);
+    if (entry) { entry.quantity += Number(change.dataset.delta); if (entry.quantity <= 0) cart = cart.filter(item => item !== entry); else entry.quantity = Math.min(20, entry.quantity); saveCart(); }
+    return;
+  }
+  const button = event.target.closest('[data-checkout]');
   if (!button) return;
   button.disabled = true;
   button.textContent = 'Opening checkout…';
   try {
-    const response = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: button.dataset.buy }) });
+    const response = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart }) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Checkout could not open.');
     location.href = result.url;
-  } catch (error) { showToast(error.message); button.disabled = false; button.innerHTML = 'Buy now <span>↗</span>'; }
+  } catch (error) { showToast(error.message); button.disabled = false; button.innerHTML = 'Continue to checkout <span>↗</span>'; }
 });
 
-if (new URLSearchParams(location.search).get('ordered') === '1') showToast('Thanks for your order! Check your email for a receipt. 🍪');
+if (new URLSearchParams(location.search).get('ordered') === '1') { cart = []; showToast('Thanks for your order! Check your email for a receipt. 🍪'); }
+saveCart();
 render();
 fetch('/api/config').then(response => response.json()).then(value => { config = value; render(); }).catch(() => showToast('Some shop features are temporarily unavailable.'));

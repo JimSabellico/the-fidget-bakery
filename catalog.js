@@ -16,3 +16,6 @@ export const collections = {
   fidgets: { name: 'Fidgets', price: '$8 each', eyebrow: 'THE FIDGET COUNTER', title: 'Busy hands, happy hearts.', intro: 'Spin it, slide it, and find your favorite little moment of calm. Each food-inspired fidget has its own personality.' },
   wiggles: { name: 'Wiggles', price: '$5 each', eyebrow: 'MEET THE LITTLE WIGGLES', title: 'Tiny friends. Big smiles.', intro: 'The cutest desk companions in the bakery: happy little food characters ready to brighten your day.' }
 };
+
+export const shippingCents = 500;
+export const freeShippingOverCents = 2500;
