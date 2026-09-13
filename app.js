@@ -8,7 +8,14 @@ let config = { checkoutReady: false, contactReady: false };
 let cart = [];
 try {
   const stored = JSON.parse(localStorage.getItem('fidget-bakery-bag') || '[]');
-  if (Array.isArray(stored)) cart = stored.filter(entry => catalog.some(item => item.id === entry.id) && Number.isInteger(entry.quantity) && entry.quantity > 0 && entry.quantity <= 20);
+  if (Array.isArray(stored)) {
+    const seen = new Set();
+    cart = stored.filter(entry => {
+      if (!catalog.some(item => item.id === entry.id) || !Number.isInteger(entry.quantity) || entry.quantity < 1 || entry.quantity > 20 || seen.has(entry.id)) return false;
+      seen.add(entry.id);
+      return true;
+    });
+  }
 } catch { cart = []; }
 
 const money = cents => `$${(cents / 100).toFixed(0)}`;
@@ -17,7 +24,7 @@ const image = (item, className = '') => `<img class="${className}" src="${item.i
 const sparkle = (className = '') => `<span class="sparkle ${className}" aria-hidden="true">✳</span>`;
 const subtotal = () => cart.reduce((sum, entry) => sum + catalog.find(item => item.id === entry.id).priceCents * entry.quantity, 0);
 function saveCart() {
-  localStorage.setItem('fidget-bakery-bag', JSON.stringify(cart));
+  try { localStorage.setItem('fidget-bakery-bag', JSON.stringify(cart)); } catch { /* Storage can be unavailable in private browsing. */ }
   document.querySelector('#bag-count').textContent = cart.reduce((sum, entry) => sum + entry.quantity, 0);
   if (path === '/cart') render();
 }
