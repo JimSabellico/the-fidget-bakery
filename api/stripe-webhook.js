@@ -28,7 +28,7 @@ async function sendReward(email, code, sessionId) {
       from: process.env.CONTACT_FROM_EMAIL,
       to: [email],
       subject: 'A $5 thank-you from The Fidget Bakery 🍪',
-      text: `Your friend shopped The Fidget Bakery through your link! Use code ${code} for $5 off a future order of $25 or more in merchandise. This code works once and cannot be exchanged for cash. Shop at ${process.env.SITE_URL || 'https://the-fidget-bakery.vercel.app'}/fidgets. Thanks for sharing the fun!`
+      text: `Your friend shopped The Fidget Bakery through your link! Use code ${code} for $5 off a future order of $25 or more in merchandise. This code works once and cannot be exchanged for cash. Shop at ${process.env.SITE_URL || 'https://www.thefidgetbakery.com'}/fidgets. Thanks for sharing the fun!`
     })
   });
   if (!response.ok) throw new Error('Could not send referral reward.');

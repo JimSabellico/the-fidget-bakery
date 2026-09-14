@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   }
   const subtotal = items.reduce((sum, entry) => sum + (entry.kind === 'teacher-pack' ? teacherPackPriceCents : entry.product.priceCents * entry.quantity), 0);
   const shipping = subtotal > freeShippingOverCents ? 0 : shippingCents;
-  const origin = process.env.SITE_URL || 'https://the-fidget-bakery.vercel.app';
+  const origin = process.env.SITE_URL || 'https://www.thefidgetbakery.com';
   const body = new URLSearchParams({
     mode: 'payment',
     customer_creation: 'always',
