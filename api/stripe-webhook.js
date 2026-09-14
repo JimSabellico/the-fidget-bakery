@@ -27,6 +27,7 @@ async function sendReward(email, code, sessionId) {
     body: JSON.stringify({
       from: process.env.CONTACT_FROM_EMAIL,
       to: [email],
+      reply_to: process.env.CONTACT_TO_EMAIL,
       subject: 'A $5 thank-you from The Fidget Bakery 🍪',
       text: `Your friend shopped The Fidget Bakery through your link! Use code ${code} for $5 off a future order of $25 or more in merchandise. This code works once and cannot be exchanged for cash. Shop at ${process.env.SITE_URL || 'https://www.thefidgetbakery.com'}/fidgets. Thanks for sharing the fun!`
     })

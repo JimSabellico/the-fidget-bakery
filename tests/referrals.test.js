@@ -23,7 +23,7 @@ test('rejects an altered Stripe webhook payload', () => {
 test('a paid referral issues one $5 code with a $25 minimum and emails the original buyer', async () => {
   const previousEnv = { ...process.env };
   const previousFetch = global.fetch;
-  Object.assign(process.env, { STRIPE_SECRET_KEY: 'sk_test_mock', STRIPE_WEBHOOK_SECRET: 'whsec_test', RESEND_API_KEY: 're_test', CONTACT_FROM_EMAIL: 'Bakery <hello@example.com>', SITE_URL: 'https://example.com' });
+  Object.assign(process.env, { STRIPE_SECRET_KEY: 'sk_test_mock', STRIPE_WEBHOOK_SECRET: 'whsec_test', RESEND_API_KEY: 're_test', CONTACT_FROM_EMAIL: 'Bakery <hello@example.com>', CONTACT_TO_EMAIL: 'bakery@example.com', SITE_URL: 'https://example.com' });
   const calls = [];
   global.fetch = async (url, options = {}) => {
     calls.push({ url, options });
@@ -51,6 +51,7 @@ test('a paid referral issues one $5 code with a $25 minimum and emails the origi
     assert.equal(promotion.options.body.get('promotion[coupon]'), 'coupon_reward');
     assert.equal(promotion.options.body.get('restrictions[minimum_amount]'), '2500');
     assert.deepEqual(JSON.parse(email.options.body).to, ['original@example.com']);
+    assert.equal(JSON.parse(email.options.body).reply_to, 'bakery@example.com');
     assert.match(JSON.parse(email.options.body).text, /TREAT5/);
   } finally {
     global.fetch = previousFetch;
