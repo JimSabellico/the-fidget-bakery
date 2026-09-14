@@ -99,3 +99,59 @@
 .footer-bottom{border-top:1px dashed rgba(255,186,214,.52);margin-top:65px;color:#f6d8cb}
 @media(max-width:850px){.footer-top{grid-template-columns:1.4fr 1fr 1fr;gap:30px}}
 @media(max-width:600px){.site-footer{padding-top:72px}.footer-top{grid-template-columns:1fr 1fr;gap:35px 20px}.footer-brand{grid-column:span 2}.footer-logo{width:190px}.footer-bottom{margin-top:50px}.footer-links a{font-size:.78rem}.footer-rhythm{font-size:.58rem}}
+
+/* A lighter bakery counter for the navigation. */
+.skip-link{position:fixed;left:16px;top:12px;z-index:100;transform:translateY(-150%);padding:10px 16px;border-radius:12px;background:var(--brown);color:#fff;font-weight:800}
+.site-header~main [id]{scroll-margin-top:112px}
+.skip-link:focus{transform:translateY(0)}
+.top-strip{background-image:radial-gradient(circle at 15px 18px,rgba(255,182,215,.18) 1px,transparent 2px);background-size:90px 36px}
+.site-header{gap:clamp(10px,1.5vw,22px);background:rgba(255,248,236,.96);border-bottom:2px solid rgba(244,8,130,.13);transition:box-shadow .25s,border-color .25s,background-color .25s}
+.site-header.is-scrolled,.site-header.menu-open{background:rgba(255,248,236,.985);border-bottom-color:rgba(244,8,130,.3);box-shadow:0 10px 24px rgba(81,46,36,.10)}
+.brand{display:block;width:165px;aspect-ratio:950/460;overflow:hidden;border-radius:50%;flex:none;transition:transform .25s,filter .25s}
+.brand img{width:100%;height:100%;max-width:none;object-fit:cover;transform:scale(1.07)}
+.brand:hover{transform:rotate(-3deg) translateY(-2px);filter:drop-shadow(2px 4px 0 rgba(244,8,130,.15))}
+.primary-nav{gap:clamp(2px,.6vw,9px);padding:4px;border:1px solid rgba(81,46,36,.09);border-radius:999px;background:rgba(255,255,255,.6);box-shadow:0 3px 0 rgba(81,46,36,.035);font-size:clamp(.79rem,.95vw,.9rem)}
+.primary-nav a{padding:12px clamp(8px,.85vw,13px);border-radius:999px;white-space:nowrap;transition:color .22s,background-color .22s,transform .22s}
+.primary-nav a:after{height:3px;left:13px;right:auto;width:calc(100% - 26px);bottom:6px;transform:scaleX(0);transform-origin:center;transition:transform .22s}
+.primary-nav a:hover,.primary-nav a:focus-visible{background:var(--blush);color:var(--deep-pink);transform:translateY(-2px)}
+.primary-nav a.active{background:var(--blush);color:var(--deep-pink)}
+.primary-nav a.active:after,.primary-nav a:hover:after,.primary-nav a:focus-visible:after{transform:scaleX(1)}
+.primary-nav .nav-contact{display:none}
+.header-cta{padding:11px 15px 11px 20px;transition:transform .22s,box-shadow .22s,background-color .22s}
+.header-cta span{display:grid;place-items:center;width:26px;height:26px;margin-left:10px;border-radius:50%;background:rgba(255,255,255,.18);transition:transform .22s,background-color .22s}
+.header-cta:hover{background:var(--deep-pink);box-shadow:0 8px 0 var(--brown)}
+.header-cta:hover span{transform:translate(2px,-2px);background:rgba(255,255,255,.28)}
+.bag-link{transition:transform .22s,background-color .22s,box-shadow .22s}
+.bag-link:hover{transform:translateY(-2px);box-shadow:0 4px 0 rgba(81,46,36,.15)}
+.menu-toggle{width:43px;height:43px;padding:0;place-items:center;border:2px solid var(--brown);border-radius:14px;background:#fff5e8;transition:background-color .2s,transform .2s}
+.menu-toggle:hover{background:var(--blush);transform:translateY(-2px)}
+.menu-lines{position:relative;display:block;width:20px;height:18px}
+.menu-lines i{position:absolute;left:0;display:block;width:20px;height:2.5px;border-radius:4px;background:var(--brown);transition:top .22s,transform .22s,opacity .15s}
+.menu-lines i:nth-child(1){top:1px}.menu-lines i:nth-child(2){top:8px}.menu-lines i:nth-child(3){top:15px}
+.menu-open .menu-lines i:nth-child(1){top:8px;transform:rotate(45deg)}
+.menu-open .menu-lines i:nth-child(2){opacity:0}
+.menu-open .menu-lines i:nth-child(3){top:8px;transform:rotate(-45deg)}
+:where(a,button,input,textarea,select):focus-visible{outline:3px solid var(--pink);outline-offset:4px}
+.button span{display:inline-block;transition:transform .22s}
+.button:hover span{transform:translate(2px,-2px)}
+.button:active,.header-cta:active,.bag-link:active{transform:translateY(1px)}
+.product-card:focus-within,.choice:focus-visible{transform:translateY(-4px);box-shadow:0 12px 0 rgba(81,46,36,.11)}
+.path-card,.maker-card,.pack-mode,.referral-steps article,.quantity button,.bump-button{transition:transform .22s,box-shadow .22s,background-color .22s,border-color .22s}
+.path-card:hover,.path-card:focus-within,.referral-steps article:hover{transform:translateY(-4px)}
+.pack-mode:hover,.pack-mode:focus-visible{transform:translateY(-3px);border-color:var(--pink)}
+.quantity button:hover:not(:disabled){transform:scale(1.08);background:var(--blush)}
+#page>:first-child{animation:page-settle .34s ease-out both}
+@keyframes page-settle{from{opacity:.94;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:850px){
+  .brand{width:148px}
+  .menu-toggle{display:grid;flex:none}
+  .primary-nav{display:flex;top:calc(100% - 1px);left:12px;right:12px;gap:3px;padding:14px;border:1.5px solid rgba(244,8,130,.2);border-top:0;border-radius:0 0 22px 22px;background:rgba(255,248,236,.99);box-shadow:0 18px 28px rgba(81,46,36,.14);visibility:hidden;opacity:0;pointer-events:none;transform:translateY(-8px);transition:opacity .22s,transform .22s,visibility .22s}
+  .site-header.menu-open .primary-nav{visibility:visible;opacity:1;pointer-events:auto;transform:translateY(0)}
+  .primary-nav a{padding:12px 16px;border-radius:12px;font-size:.96rem}
+  .primary-nav a:after{left:4px;top:10px;bottom:auto;width:3px;height:calc(100% - 20px);transform:scaleY(0)}
+  .primary-nav a.active:after,.primary-nav a:hover:after,.primary-nav a:focus-visible:after{transform:scaleY(1)}
+  .primary-nav a:hover,.primary-nav a:focus-visible{transform:none}
+  .primary-nav .nav-contact{display:flex;justify-content:space-between;align-items:center;margin-top:6px;border-top:1px dashed var(--line);border-radius:0;color:var(--deep-pink)}
+}
+@media(max-width:420px){.site-header{padding-inline:18px;gap:8px}.brand{width:132px}.bag-link{padding:7px 8px 7px 10px}.menu-toggle{width:40px;height:40px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}

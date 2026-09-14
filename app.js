@@ -203,7 +203,12 @@ function render() {
   else page.innerHTML = notFound();
   document.title = title;
   const nav = segments[0];
-  document.querySelectorAll('[data-nav]').forEach(link => link.classList.toggle('active', link.dataset.nav === nav));
+  document.querySelectorAll('[data-nav]').forEach(link => {
+    const active = link.dataset.nav === nav;
+    link.classList.toggle('active', active);
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
   activateForms();
 }
 
@@ -237,12 +242,29 @@ function activateForms() {
 }
 
 document.querySelector('#year').textContent = new Date().getFullYear();
-document.querySelector('.menu-toggle').addEventListener('click', event => {
-  const open = document.querySelector('.site-header').classList.toggle('menu-open');
-  event.currentTarget.setAttribute('aria-expanded', String(open));
-  event.currentTarget.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-  event.currentTarget.textContent = open ? '✕' : '☰';
+const header = document.querySelector('.site-header');
+const menuToggle = document.querySelector('.menu-toggle');
+function setMenuOpen(open) {
+  header.classList.toggle('menu-open', open);
+  menuToggle.setAttribute('aria-expanded', String(open));
+  menuToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+}
+menuToggle.addEventListener('click', () => setMenuOpen(!header.classList.contains('menu-open')));
+document.addEventListener('click', event => {
+  if (header.classList.contains('menu-open') && !header.contains(event.target)) setMenuOpen(false);
 });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && header.classList.contains('menu-open')) {
+    setMenuOpen(false);
+    menuToggle.focus();
+  }
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 850 && header.classList.contains('menu-open')) setMenuOpen(false);
+});
+function updateHeaderDepth() { header.classList.toggle('is-scrolled', window.scrollY > 12); }
+window.addEventListener('scroll', updateHeaderDepth, { passive: true });
+updateHeaderDepth();
 
 document.addEventListener('change', event => {
   if (event.target.matches('[data-pack-single]')) { packSingleId = event.target.value; render(); }
