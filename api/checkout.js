@@ -1,5 +1,6 @@
 import { catalog, shippingCents, freeShippingOverCents } from '../catalog.js';
 import { normalizeTeacherPack, teacherPackDescription, teacherPackMetadata, teacherPackPriceCents } from '../teacher-pack.js';
+import { paidReferrer, referralsReady, stripeRequest } from '../lib/stripe.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed.' });
@@ -33,15 +34,24 @@ export default async function handler(req, res) {
   const origin = process.env.SITE_URL || 'https://the-fidget-bakery.vercel.app';
   const body = new URLSearchParams({
     mode: 'payment',
+    customer_creation: 'always',
     'shipping_address_collection[allowed_countries][0]': 'US',
     'shipping_options[0][shipping_rate_data][type]': 'fixed_amount',
     'shipping_options[0][shipping_rate_data][fixed_amount][amount]': String(shipping),
     'shipping_options[0][shipping_rate_data][fixed_amount][currency]': 'usd',
     'shipping_options[0][shipping_rate_data][display_name]': shipping === 0 ? 'Free US shipping' : 'US shipping',
     'allow_promotion_codes': 'true',
-    success_url: `${origin}/?ordered=1`,
+    'metadata[shop]': 'fidget-bakery',
+    success_url: `${origin}/?ordered=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/cart`
   });
+  const referrerId = String(req.body?.referrer || '');
+  if (referrerId && referralsReady()) {
+    try {
+      const referrer = await paidReferrer(referrerId);
+      if (referrer) body.set('metadata[referrer_customer]', referrer.id);
+    } catch { /* A stale referral link should not prevent an ordinary order. */ }
+  }
   let packNumber = 0;
   items.forEach((entry, index) => {
     const isPack = entry.kind === 'teacher-pack';
@@ -58,13 +68,8 @@ export default async function handler(req, res) {
     body.set(`line_items[${index}][quantity]`, String(quantity));
   });
   try {
-    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body
-    });
-    const data = await response.json();
-    if (!response.ok || !data.url) throw new Error(data.error?.message || 'Unable to start checkout.');
+    const data = await stripeRequest('/checkout/sessions', { method: 'POST', body });
+    if (!data.url) throw new Error('Unable to start checkout.');
     return res.status(200).json({ url: data.url });
   } catch {
     return res.status(502).json({ error: 'Checkout is temporarily unavailable. Please try again soon.' });

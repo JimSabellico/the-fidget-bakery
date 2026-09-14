@@ -1,13 +1,24 @@
 import { catalog, collections, shippingCents, freeShippingOverCents } from './catalog.js';
 import { teacherPackSize, teacherPackPriceCents, packFidgets, normalizeTeacherPack, teacherPackDescription } from './teacher-pack.js';
+import { featuredMakers } from './makers.js';
 
 const page = document.querySelector('#page');
 const toast = document.querySelector('#toast');
 const path = location.pathname.replace(/\/+$/, '') || '/';
 const segments = path.split('/').filter(Boolean);
 const legacyFidgetIds = { 'black-white-cookie': 'black-white-half-moon-cookie', 'peanut-butter-cookie': 'peanut-butter-sandwich-cookie' };
-let config = { checkoutReady: false, contactReady: false };
+let config = { checkoutReady: false, contactReady: false, referralsReady: false };
 let cart = [];
+const params = new URLSearchParams(location.search);
+const orderSessionId = params.get('ordered') === '1' ? params.get('session_id') : null;
+let orderStatus = null;
+let referrerId = null;
+try {
+  const incoming = params.get('ref');
+  if (incoming && /^cus_[A-Za-z0-9]+$/.test(incoming)) localStorage.setItem('fidget-bakery-referrer', incoming);
+  referrerId = localStorage.getItem('fidget-bakery-referrer');
+  if (!/^cus_[A-Za-z0-9]+$/.test(referrerId || '')) referrerId = null;
+} catch { /* Referrals remain optional when browser storage is unavailable. */ }
 let packMode = 'single';
 let packSingleId = packFidgets[0].id;
 let packCounts = Object.fromEntries(packFidgets.map(item => [item.id, 0]));
@@ -58,6 +69,7 @@ function showToast(message) {
 }
 
 function crumb(label, href) { return `<a href="${href}">${label}</a><span aria-hidden="true">›</span>`; }
+function escapeHtml(value) { return String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]); }
 
 function productCard(item) {
   return `<a class="product-card" href="${productUrl(item)}" aria-label="View ${item.name}">
@@ -100,7 +112,7 @@ function product(item) {
     <div class="product-info"><span class="eyebrow">${item.category === 'fidgets' ? 'FRESH FROM THE FIDGET COUNTER' : 'A LITTLE WIGGLE FRIEND'}</span><h1>${item.name}</h1><div class="product-price">${money(item.priceCents)} <span>each</span></div><span class="product-type">${item.type}</span><p class="product-lead">${item.detail}</p><div class="product-points"><div><span>✦</span> Family-made 3D printed fun</div><div><span>✦</span> Food-inspired, never edible</div><div><span>✦</span> A sweet little gift or desk companion</div></div>
     <button class="button button-pink buy-button" data-add="${item.id}">Add to bag <span>↗</span></button><a class="quiet-link" href="/cart">View your bag ↗</a>
     ${config.checkoutReady ? '' : `<div class="setup-note"><strong>Online checkout is being connected.</strong><span>You can build a bag now; payment will open soon.</span></div>`}
-    ${item.makerworld ? `<a class="quiet-link" href="${item.makerworld}" target="_blank" rel="noopener noreferrer">See the original design on MakerWorld ↗</a>` : ''}<p class="image-note">${item.imageKind === 'photo' ? 'Studio-edited from a photo of the actual printed product. Color and finish may vary slightly.' : item.imageKind === 'pending' ? 'Product photo coming soon.' : 'Wiggle image is an illustration; final 3D prints may vary.'}</p></div>
+    ${item.makerworld ? `<a class="quiet-link" href="${item.makerworld}" target="_blank" rel="noopener noreferrer">See the original design on MakerWorld ↗</a>` : ''}<a class="quiet-link" href="/where-to-buy">Want to print or sell a design? See your options ↗</a><p class="image-note">${item.imageKind === 'photo' ? 'Studio-edited from a photo of the actual printed product. Color and finish may vary slightly.' : item.imageKind === 'pending' ? 'Product photo coming soon.' : 'Wiggle image is an illustration; final 3D prints may vary.'}</p></div>
   </div></section><section class="related page-wrap"><div class="list-heading"><div><span class="eyebrow">KEEP EXPLORING</span><h2>More ${category.name.toLowerCase()} to <em>love.</em></h2></div><a href="/${item.category}">See all ${category.name} ↗</a></div><div class="products-grid">${related.map(productCard).join('')}</div></section>`;
 }
 
@@ -146,11 +158,37 @@ function contactPage() {
   return `<section class="form-section contact-section page-wrap"><div><div class="breadcrumbs">${crumb('Home','/')}<span>Contact</span></div><span class="eyebrow">SAY HELLO ✦</span><h1>Let’s talk <em>fidgets.</em></h1><p>Questions about a toy, an upcoming fair, or a custom idea? We’d love to hear from you.</p><div class="external-links"><a href="https://makerworld.com/en/@TheFidgetBakery" target="_blank" rel="noopener noreferrer">Find our designs on MakerWorld ↗</a><a href="https://ko-fi.com/thefidgetbakery/tiers" target="_blank" rel="noopener noreferrer">Explore our reseller license ↗</a></div></div>${form('message')}</section>`;
 }
 
+function makerForm() {
+  return `<form class="form-card maker-form" data-kind="maker"><h2>Join the shelf <span>✳</span></h2><p>Already have an active Fidget Bakery selling license? Tell us where people can find your prints.</p><div class="form-row"><label>Your name<input name="name" autocomplete="name" required></label><label>Email address<input name="email" type="email" autocomplete="email" required></label></div><label>Shop name<input name="shop" maxlength="100" required></label><div class="form-row"><label>City or region<input name="region" maxlength="100" required></label><label>Shop or social link<input name="shopUrl" type="url" placeholder="https://" required></label></div><label>Anything else we should know?<textarea name="message" rows="3" placeholder="What do you make, and where do you sell it?" required></textarea></label><input class="honey" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><button class="button button-pink" type="submit">Request a listing <span>↗</span></button><p class="form-status" role="status"></p></form>`;
+}
+
+function whereToBuy() {
+  const makerCards = featuredMakers.filter(maker => /^https:\/\//.test(maker.url)).map(maker => `<a class="maker-card" href="${escapeHtml(maker.url)}" target="_blank" rel="noopener noreferrer"><span class="maker-pin" aria-hidden="true">✳</span><strong>${escapeHtml(maker.name)}</strong><span>${escapeHtml(maker.region)}</span><b>Visit this maker ↗</b></a>`).join('');
+  return `<section class="ecosystem-hero"><div class="page-wrap"><div class="breadcrumbs">${crumb('Home','/')}<span>Where to buy</span></div><span class="eyebrow">PICK YOUR PATH TO PLAY ✦</span><h1>Find your <em>fidget fix.</em></h1><p>Have us make it, print a design yourself, or bring the bakery to your own shop. There’s more than one way to share the fun.</p></div><span class="ecosystem-spark" aria-hidden="true">✳</span></section>
+  <section class="ecosystem-paths page-wrap" aria-label="Ways to get Fidget Bakery toys"><div class="path-grid"><article class="path-card path-shop"><span class="path-number">01 / READY TO PLAY</span><div class="path-icon" aria-hidden="true">🍪</div><h2>Shop our bakery.</h2><p>Choose a fidget or Wiggle and we’ll make it and ship it to you in the U.S.</p><div class="path-actions"><a class="button button-pink" href="/fidgets">Shop fidgets <span>↗</span></a><a class="text-action" href="/wiggles">See Wiggles ↗</a></div>${config.checkoutReady ? '' : '<small>Online checkout is being connected.</small>'}</article>
+  <article class="path-card path-print"><span class="path-number">02 / MAKE IT YOURSELF</span><div class="path-icon" aria-hidden="true">✳</div><h2>Download a design.</h2><p>Find many of our print files on MakerWorld and make one on your own 3D printer. Some designs have not been uploaded yet.</p><div class="path-actions"><a class="button button-cream" href="https://makerworld.com/en/@TheFidgetBakery" target="_blank" rel="noopener noreferrer">Explore MakerWorld <span>↗</span></a></div><small>See each file’s terms before printing or sharing.</small></article>
+  <article class="path-card path-sell"><span class="path-number">03 / MAKE + SELL</span><div class="path-icon" aria-hidden="true">♡</div><h2>Open your own shelf.</h2><p>Our $10/month Ko-fi membership lets makers print and sell eligible designs at their own locations.</p><div class="path-actions"><a class="button button-brown" href="https://ko-fi.com/thefidgetbakery/tiers" target="_blank" rel="noopener noreferrer">See the selling license <span>↗</span></a></div><small>Check the current Ko-fi tier for included designs and license terms.</small></article></div></section>
+  <section class="maker-directory page-wrap" id="makers"><div class="directory-heading"><div><span class="eyebrow">THE BAKERY AROUND THE BLOCK ✦</span><h2>Find a <em>licensed maker.</em></h2><p>We’d love to introduce you to independent makers who print Fidget Bakery designs. Shop availability, pricing, and fulfillment are handled by each maker.</p></div><span class="directory-stamp" aria-hidden="true">MADE<br>NEAR YOU</span></div>${makerCards ? `<div class="maker-grid">${makerCards}</div>` : '<div class="directory-empty"><span aria-hidden="true">✳</span><div><h3>Fresh listings are on the way.</h3><p>Our first maker spots are open. Check back as the community grows.</p></div></div>'}</section>
+  <section class="maker-invite"><div class="page-wrap maker-invite-grid"><div><span class="eyebrow">ALREADY A LICENSED MAKER?</span><h2>Let’s put your shop <em>on the map.</em></h2><p>Send your shop name, region, and link. We’ll confirm your active license before featuring you here.</p><a class="quiet-link" href="https://ko-fi.com/thefidgetbakery/tiers" target="_blank" rel="noopener noreferrer">Need a selling license first? Start on Ko-fi ↗</a></div>${makerForm()}</div></section>`;
+}
+
+function shareTheFun() {
+  return `<section class="referral-hero"><div class="page-wrap referral-hero-inner"><div><div class="breadcrumbs">${crumb('Home','/')}<span>Share the fun</span></div><span class="eyebrow">A LITTLE THANK-YOU FOR SHARING ✦</span><h1>Good fidgets<br><em>get passed around.</em></h1><p>When a friend shops through your personal link, we’ll send you $5 off a future order of $25 or more.</p><span class="referral-status">${config.referralsReady ? 'REFERRALS ARE OPEN ✳' : 'REFERRALS ARE OPENING SOON ✳'}</span></div><div class="referral-art" aria-hidden="true"><span>YOU</span><b>✳</b><span>FRIEND</span><b>↗</b><span>$5<br><small>FOR YOU</small></span></div></div></section>
+  <section class="referral-details page-wrap"><div class="referral-steps"><article><b>01</b><h2>Shop a treat.</h2><p>After a paid order, your confirmation page gives you a personal sharing link.</p></article><article><b>02</b><h2>Send it along.</h2><p>Share the link with someone who’d love a little bakery fun.</p></article><article><b>03</b><h2>Get your thank-you.</h2><p>After they place a paid order, we email you a one-use $5 code for a future $25+ merchandise order.</p></article></div><div class="referral-fine"><p>One reward per eligible referred order. You cannot refer yourself. The code is one use, has no cash value, and is entered at checkout. If you share your link publicly, please say that you may get a $5 discount if someone buys through it.</p></div><div class="referral-cta"><div><span class="eyebrow">READY FOR MORE FUN?</span><h2>${config.referralsReady ? 'Your next order comes with a link.' : 'We’re getting the rewards ready.'}</h2><p>${config.referralsReady ? 'Your link appears after checkout, ready to copy and share.' : 'We’ll open sharing as soon as online checkout and reward emails are connected.'}</p></div><a class="button button-pink" href="/fidgets">Explore fidgets <span>↗</span></a></div></section>`;
+}
+
+function orderSuccess() {
+  const heading = orderStatus?.paid ? 'Your order is <em>in the oven.</em>' : orderStatus?.paid === false ? 'Your payment is <em>processing.</em>' : 'We’re checking <em>your order.</em>';
+  const content = orderStatus?.error ? `<p>${escapeHtml(orderStatus.error)}</p>` : !orderStatus ? '<p>Checking your payment…</p>' : orderStatus.paid === false ? '<p>Your payment is still processing. Please check your email for confirmation.</p>' : `<p>Thanks for your order! Check your email for your Stripe receipt.</p>${orderStatus.link ? `<div class="share-receipt"><h2>Pass the fun along.</h2><p>Share your personal link. When a friend buys through it, we’ll email you a $5 code for a future $25+ order.</p><div class="share-url"><input value="${escapeHtml(orderStatus.link)}" readonly aria-label="Your referral link"><button type="button" data-copy-referral>Copy link</button></div></div>` : '<p>Our sharing rewards are opening soon. Keep an eye on the bakery!</p>'}`;
+  return `<section class="order-success page-wrap"><span class="order-success-icon" aria-hidden="true">🍪</span><span class="eyebrow">A SWEET LITTLE HAUL ✦</span><h1>${heading}</h1>${content}<a class="button button-cream" href="/fidgets">Keep exploring <span>↗</span></a></section>`;
+}
+
 function notFound() { return `<section class="not-found page-wrap"><span class="eyebrow">OOPS, THAT TREAT IS MISSING</span><h1>We couldn’t find that page.</h1><a class="button button-pink" href="/">Back to the bakery <span>↗</span></a></section>`; }
 
 function render() {
   let title = 'The Fidget Bakery | Freshly made fun';
-  if (path === '/') page.innerHTML = home();
+  if (path === '/' && orderSessionId) { page.innerHTML = orderSuccess(); title = 'Thanks for your order | The Fidget Bakery'; }
+  else if (path === '/') page.innerHTML = home();
   else if (segments.length === 1 && collections[segments[0]]) { page.innerHTML = collection(segments[0]); title = `${collections[segments[0]].name} | The Fidget Bakery`; }
   else if (segments.length === 2 && collections[segments[0]]) {
     const item = catalog.find(candidate => candidate.category === segments[0] && candidate.id === (legacyFidgetIds[segments[1]] || segments[1]));
@@ -160,6 +198,8 @@ function render() {
   else if (path === '/cart') { page.innerHTML = cartPage(); title = 'Your Bag | The Fidget Bakery'; }
   else if (path === '/custom') { page.innerHTML = customPage(); title = 'Custom Orders | The Fidget Bakery'; }
   else if (path === '/contact') { page.innerHTML = contactPage(); title = 'Contact | The Fidget Bakery'; }
+  else if (path === '/where-to-buy') { page.innerHTML = whereToBuy(); title = 'Where to Buy | The Fidget Bakery'; }
+  else if (path === '/share-the-fun') { page.innerHTML = shareTheFun(); title = 'Share the Fun | The Fidget Bakery'; }
   else page.innerHTML = notFound();
   document.title = title;
   const nav = segments[0];
@@ -171,7 +211,7 @@ function activateForms() {
   document.querySelectorAll('form[data-kind]').forEach(form => {
     if (!config.contactReady) {
       form.querySelectorAll('input, textarea, select, button').forEach(control => control.disabled = true);
-      form.querySelector('.form-status').innerHTML = 'This form is being connected. Until then, you can explore our <a href="https://makerworld.com/en/@TheFidgetBakery" target="_blank" rel="noopener noreferrer">MakerWorld page ↗</a>.';
+      form.querySelector('.form-status').innerHTML = form.dataset.kind === 'maker' ? 'Listing requests will open when our email form is connected. In the meantime, see the <a href="https://ko-fi.com/thefidgetbakery/tiers" target="_blank" rel="noopener noreferrer">selling license ↗</a>.' : 'This form is being connected. Until then, you can explore our <a href="https://makerworld.com/en/@TheFidgetBakery" target="_blank" rel="noopener noreferrer">MakerWorld page ↗</a>.';
       return;
     }
     form.addEventListener('submit', async event => {
@@ -181,6 +221,7 @@ function activateForms() {
       const data = Object.fromEntries(new FormData(form));
       data.kind = form.dataset.kind;
       if (data.school) data.details = `School or organization: ${data.school}`;
+      if (data.kind === 'maker') data.details = `Shop: ${data.shop}\nRegion: ${data.region}\nLink: ${data.shopUrl}`;
       button.disabled = true;
       status.textContent = 'Sending…';
       try {
@@ -199,6 +240,7 @@ document.querySelector('#year').textContent = new Date().getFullYear();
 document.querySelector('.menu-toggle').addEventListener('click', event => {
   const open = document.querySelector('.site-header').classList.toggle('menu-open');
   event.currentTarget.setAttribute('aria-expanded', String(open));
+  event.currentTarget.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
   event.currentTarget.textContent = open ? '✕' : '☰';
 });
 
@@ -207,6 +249,11 @@ document.addEventListener('change', event => {
 });
 
 document.addEventListener('click', async event => {
+  if (event.target.closest('[data-copy-referral]')) {
+    const input = document.querySelector('.share-url input');
+    if (input) { try { await navigator.clipboard.writeText(input.value); showToast('Your sharing link is copied! ✳'); } catch { input.select(); showToast('Select and copy your link to share it.'); } }
+    return;
+  }
   const mode = event.target.closest('[data-pack-mode]');
   if (mode) { packMode = mode.dataset.packMode; render(); return; }
   const packChange = event.target.closest('[data-pack-change]');
@@ -233,14 +280,14 @@ document.addEventListener('click', async event => {
   button.disabled = true;
   button.textContent = 'Opening checkout…';
   try {
-    const response = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart }) });
+    const response = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart, referrer: referrerId }) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Checkout could not open.');
     location.href = result.url;
   } catch (error) { showToast(error.message); button.disabled = false; button.innerHTML = 'Continue to checkout <span>↗</span>'; }
 });
 
-if (new URLSearchParams(location.search).get('ordered') === '1') { cart = []; showToast('Thanks for your order! Check your email for a receipt. 🍪'); }
 saveCart();
 render();
 fetch('/api/config').then(response => response.json()).then(value => { config = value; render(); }).catch(() => showToast('Some shop features are temporarily unavailable.'));
+if (orderSessionId) fetch('/api/referral-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: orderSessionId }) }).then(response => response.json().then(result => ({ ok: response.ok, result }))).then(({ ok, result }) => { orderStatus = ok ? result : { error: result.error || 'We could not verify your order yet.' }; if (orderStatus.paid) { cart = []; saveCart(); } render(); }).catch(() => { orderStatus = { error: 'We could not verify your order yet. Please check your email for a receipt.' }; render(); });

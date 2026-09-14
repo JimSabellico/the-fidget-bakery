@@ -10,7 +10,9 @@
     { "source": "/teacher-packs", "destination": "/" },
     { "source": "/cart", "destination": "/" },
     { "source": "/custom", "destination": "/" },
-    { "source": "/contact", "destination": "/" }
+    { "source": "/contact", "destination": "/" },
+    { "source": "/where-to-buy", "destination": "/" },
+    { "source": "/share-the-fun", "destination": "/" }
   ],
   "headers": [
     {

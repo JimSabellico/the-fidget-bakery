@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "node dev-server.mjs",
-    "check": "node --check app.js && node --check teacher-pack.js && node --check api/contact.js && node --check api/checkout.js && node --check api/config.js && node --check dev-server.mjs"
+    "check": "node --check app.js && node --check makers.js && node --check teacher-pack.js && node --check lib/stripe.js && node --check api/contact.js && node --check api/checkout.js && node --check api/config.js && node --check api/referral-link.js && node --check api/stripe-webhook.js && node --check dev-server.mjs && node --test tests/*.test.js"
   }
 }
