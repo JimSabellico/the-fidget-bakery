@@ -69,17 +69,7 @@
   pointer-events:none;
 }
 .site-footer:after{
-  content:"✳";
-  position:absolute;
-  right:-85px;
-  bottom:-155px;
-  font-family:Fredoka,sans-serif;
-  font-size:440px;
-  line-height:1;
-  color:rgba(255,138,197,.08);
-  transform:rotate(-15deg);
-  pointer-events:none;
-  z-index:-1;
+  content:none;
 }
 .footer-top,.footer-bottom{position:relative;z-index:1}
 .footer-top{grid-template-columns:minmax(0,1.65fr) minmax(150px,.8fr) minmax(190px,1fr);gap:clamp(35px,6vw,90px)}
@@ -94,7 +84,7 @@
 .footer-links{gap:7px}
 .footer-links strong{display:inline-block;width:max-content;margin-bottom:13px;padding:6px 12px;background:var(--pink);border-radius:999px;color:#fff;font-family:Fredoka,sans-serif;font-size:.78rem;letter-spacing:.08em;transform:rotate(-3deg)}
 .footer-links a{width:max-content;max-width:100%;padding:5px 0;color:#fff5e9;transition:color .2s,transform .2s}
-.footer-links a:before{content:"✳";display:inline-block;margin-right:10px;color:#ff9ed0;font-size:.62rem;vertical-align:2px}
+.footer-links a:before{content:"";display:inline-block;width:7px;height:7px;margin:0 11px 1px 2px;border:2px solid #ff9ed0;border-radius:2px;transform:rotate(45deg)}
 .footer-links a:hover{color:#ffbddc;transform:translateX(4px)}
 .footer-bottom{border-top:1px dashed rgba(255,186,214,.52);margin-top:65px;color:#f6d8cb}
 @media(max-width:850px){.footer-top{grid-template-columns:1.4fr 1fr 1fr;gap:30px}}
