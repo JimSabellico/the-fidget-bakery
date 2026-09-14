@@ -108,7 +108,7 @@ function product(item) {
   const category = collections[item.category];
   const related = catalog.filter(candidate => candidate.category === item.category && candidate.id !== item.id).slice(0, 3);
   return `<section class="product-page page-wrap"><div class="breadcrumbs">${crumb('Home','/')}${crumb(category.name,`/${item.category}`)}<span>${item.name}</span></div><div class="product-layout">
-    <div class="product-main-image">${image(item)}<span class="image-spark image-spark-a" aria-hidden="true">✳</span><span class="image-spark image-spark-b" aria-hidden="true">✦</span></div>
+    <div class="product-gallery"><div class="product-main-image">${item.gallery ? `<img class="real-product-photo" src="${item.image}" alt="${item.gallery[0].label} of ${item.name}" data-gallery-main>` : image(item)}<span class="image-spark image-spark-a" aria-hidden="true">✳</span><span class="image-spark image-spark-b" aria-hidden="true">✦</span></div>${item.gallery ? `<div class="product-gallery-thumbs" role="group" aria-label="Product views">${item.gallery.map((view, index) => `<button type="button" class="product-gallery-thumb ${index === 0 ? 'active' : ''}" data-gallery-image="${view.image}" data-gallery-alt="${view.label} of ${item.name}" aria-label="Show ${view.label.toLowerCase()}" aria-pressed="${index === 0}"><img src="${view.image}" alt="" loading="lazy"><span>${view.label}</span></button>`).join('')}</div>` : ''}</div>
     <div class="product-info"><span class="eyebrow">${item.category === 'fidgets' ? 'FRESH FROM THE FIDGET COUNTER' : 'A LITTLE WIGGLE FRIEND'}</span><h1>${item.name}</h1><div class="product-price">${money(item.priceCents)} <span>each</span></div><span class="product-type">${item.type}</span><p class="product-lead">${item.detail}</p><div class="product-points"><div><span>✦</span> Family-made 3D printed fun</div><div><span>✦</span> Food-inspired, never edible</div><div><span>✦</span> A sweet little gift or desk companion</div></div>
     <button class="button button-pink buy-button" data-add="${item.id}">Add to bag <span>↗</span></button><a class="quiet-link" href="/cart">View your bag ↗</a>
     ${config.checkoutReady ? '' : `<div class="setup-note"><strong>Online checkout is being connected.</strong><span>You can build a bag now; payment will open soon.</span></div>`}
@@ -271,6 +271,13 @@ document.addEventListener('change', event => {
 });
 
 document.addEventListener('click', async event => {
+  const galleryView = event.target.closest('[data-gallery-image]');
+  if (galleryView) {
+    const main = document.querySelector('[data-gallery-main]');
+    if (main) { main.src = galleryView.dataset.galleryImage; main.alt = galleryView.dataset.galleryAlt; }
+    document.querySelectorAll('[data-gallery-image]').forEach(button => { const active = button === galleryView; button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active)); });
+    return;
+  }
   if (event.target.closest('[data-copy-referral]')) {
     const input = document.querySelector('.share-url input');
     if (input) { try { await navigator.clipboard.writeText(input.value); showToast('Your sharing link is copied! ✳'); } catch { input.select(); showToast('Select and copy your link to share it.'); } }
